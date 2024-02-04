@@ -2,6 +2,10 @@
 #include <ftw.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 char * fileName;
 char * finalFilePath;
@@ -13,7 +17,7 @@ int nftwCopySource(const char *filePath, const struct stat *statPtr,
 {
     if (strcmp(filePath + ftwBuffer->base, fileName) == 0)
     {
-        sourcePath = filePath;
+        sourcePath = strdup(filePath);
         return 1;
     }
     return 0;
@@ -24,14 +28,55 @@ int nftwCopyDestination(const char *filePath, const struct stat *statPtr,
 {
     if (fileFlags == FTW_D)
     {
-        destinationPath = filePath;
+        destinationPath = strdup(filePath);
         return 1;
     }
     return 0;
 }
 
-int copyFile(char *argv[])
+int copyFileUtil(char * sourceP, char * destinationP)
 {
+    int sourceFd, destinationFd, n, file;
+    char buffer[4096];
+
+
+    sourceFd = open(sourceP, O_RDONLY);
+    destinationFd = open(destinationP, O_CREAT | O_WRONLY, 0700);
+
+    while (1) {
+        file = read(sourceFd, buffer, 4096);
+        if (file == -1) {
+            printf("Error reading file.\n");
+            exit(1);
+        }
+        n = file;
+
+        if (n == 0)
+            break;
+
+        file = write(destinationFd, buffer, n);
+        if (file == -1) {
+            printf("Error writing to file.\n");
+            exit(1);
+        }
+    }
+
+    close(sourceFd);
+    close(destinationFd);
+    return 0;
+}
+
+int copyFile(char *argv[], char * option)
+{
+    int opt = 0;
+    if (strcmp(option, "-cp") == 0)
+        opt = 0;
+    else if (strcmp(option, "-mv") == 0)
+        opt = 1;
+    else
+    {
+        printf("Accepted options are: -cp (copy file) and -mv (move file)");
+    }
     sourcePath = argv[1];
     destinationPath = argv[2];
     if (nftw(sourcePath, nftwCopySource, 20, FTW_PHYS) == -1) {
@@ -41,10 +86,13 @@ int copyFile(char *argv[])
         printf("Search Unsuccessful 2\n");
     }
     printf("Source: %s \nDestination: %s\nFilename: %s\n", sourcePath, destinationPath, fileName);
-//    strcat(destinationPath, "/");
-//    strcat(destinationPath, fileName);
-//    printf("Destination: %s\n", destinationPath);
+    strcat(destinationPath, "/");
+    strcat(destinationPath, fileName);
+    printf("Destination: %s\n", destinationPath);
 
+    copyFileUtil(sourcePath, destinationPath);
+    if (opt == 1)
+        remove(sourcePath);
     return 0;
 }
 
@@ -89,18 +137,7 @@ int moveOrCopyFile(char *argv[])
 {
     char * moveOrCopy = argv[3];
     fileName = argv[4];
-    if (strcmp(moveOrCopy, "-cp") == 0)
-    {
-        copyFile(argv);
-    }
-    else if (strcmp(moveOrCopy, "-cp") == 0)
-    {
-        moveFile(argv);
-    }
-    else
-    {
-        printf("Accepted options are: -cp (copy file) and -mv (move file)");
-    }
+    copyFile(argv, moveOrCopy);
     return 0;
 }
 
