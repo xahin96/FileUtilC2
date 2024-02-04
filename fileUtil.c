@@ -43,7 +43,7 @@ int copyFileUtil(char * sourceP, char * destinationP)
     while (1) {
         file = read(sourceFd, buffer, 4096);
         if (file == -1) {
-            printf("Error reading file.\n");
+            printf("Error reading file or file doesn't exist.\n");
             exit(1);
         }
         n = file;
@@ -157,5 +157,6 @@ int main(int argc, char *argv[])
     }
     printf("Please follow the manual for further assistance: \n");
     printf("./fileutil [ root_dir] filename\n");
+
     return 0;
 }
