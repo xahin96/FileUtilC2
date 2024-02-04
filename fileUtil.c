@@ -2,13 +2,11 @@
 #include <ftw.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
 
 char * fileName;
-char * finalFilePath;
 char * sourcePath;
 char * destinationPath;
 
@@ -38,7 +36,6 @@ int copyFileUtil(char * sourceP, char * destinationP)
 {
     int sourceFd, destinationFd, n, file;
     char buffer[4096];
-
 
     sourceFd = open(sourceP, O_RDONLY);
     destinationFd = open(destinationP, O_CREAT | O_WRONLY, 0700);
@@ -96,16 +93,9 @@ int copyFile(char *argv[], char * option)
     return 0;
 }
 
-int moveFile(char *argv[])
-{
-    printf("Move File\n");
-    return 0;
-}
-
 int nftwFunc(const char *filePath, const struct stat *statPtr,
              int fileFlags, struct FTW *ftwBuffer)
 {
-    //    printf("%s  |  %d  |  %s \n", filePath, ftwBuffer->base, filePath + ftwBuffer->base);
     if (strcmp(filePath + ftwBuffer->base, fileName) == 0)
     {
         if (fileFlags == FTW_D)
