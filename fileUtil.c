@@ -6,9 +6,12 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+char * fileExt;
 char * fileName;
 char * sourcePath;
 char * destinationPath;
+int fileCount = 0;
+char **filePaths;
 
 int nftwCopySource(const char *filePath, const struct stat *statPtr,
              int fileFlags, struct FTW *ftwBuffer)
@@ -46,6 +49,8 @@ int copyFileUtil(char * sourceP, char * destinationP)
             printf("Error reading file or file doesn't exist.\n");
             exit(1);
         }
+        
+        // TODO: n=?
         n = file;
 
         if (n == 0)
@@ -57,7 +62,6 @@ int copyFileUtil(char * sourceP, char * destinationP)
             exit(1);
         }
     }
-
     close(sourceFd);
     close(destinationFd);
     return 0;
@@ -107,9 +111,117 @@ int nftwFunc(const char *filePath, const struct stat *statPtr,
     return 0;
 }
 
-int zipFile(int argc, char *argv[])
+int nftwFuncCount(const char *filePath, const struct stat *statPtr,
+             int fileFlags, struct FTW *ftwBuffer)
 {
-    printf("Zip file code\n");
+    if (fileFlags == FTW_F)
+    {
+        const char *fileExtPtr = strrchr(filePath, '.');
+        if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
+        {
+            printf("File with extension found at: %s\n", filePath);
+            fileCount++;
+        }
+    }
+    return 0;
+}
+
+int nftwFuncFileAdd(const char *filePath, const struct stat *statPtr,
+                    int fileFlags, struct FTW *ftwBuffer)
+{
+    if (fileFlags == FTW_F)
+    {
+        const char *fileExtPtr = strrchr(filePath, '.');
+        if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
+        {
+            printf("File with extension found at: %s\n", filePath);
+
+            filePaths[fileCount] = (char *)malloc(strlen(filePath) + 1);
+            strcpy(filePaths[fileCount], filePath);
+
+            fileCount++;  // Update file count
+        }
+    }
+    return 0;
+}
+
+int searchFileByExtension(char * fileExtension)
+{
+    fileExt = fileExtension;
+
+    // First pass to count the files
+    if (nftw(sourcePath, nftwFuncCount, 20, FTW_PHYS) == -1)
+    {
+        printf("Search Unsuccessful\n");
+    }
+
+    printf("Total files with extension %s found: %d\n", fileExt, fileCount);
+
+    filePaths = (char **)malloc(fileCount * sizeof(char *));
+
+    // Second pass to add file paths to the array
+    fileCount = 0;  // Reset file count
+    if (nftw(sourcePath, nftwFuncFileAdd, 20, FTW_PHYS) == -1)
+    {
+        printf("Search Unsuccessful\n");
+    }
+
+//    // Print the file paths
+//    printf("File Paths:\n");
+//    for (int i = 0; i < fileCount; i++)
+//    {
+//        printf("%s\n", filePaths[i]);
+//    }
+
+//    // Don't forget to free the allocated memory
+//    for (int i = 0; i < fileCount; i++)
+//    {
+//        free(filePaths[i]);
+//    }
+//    free(filePaths);
+
+    return 0;
+}
+
+int zipFile(char *argv[])
+{
+    fileExt = argv[3];
+    sourcePath = argv[1];
+    destinationPath = argv[2];
+
+    searchFileByExtension(fileExt);
+
+    char tarCmd[512];
+    strcpy(tarCmd, "tar -cf \"");
+    strcat(tarCmd, destinationPath);
+//    strcat(tarCmd, "/a1.tar\" -C \"");
+    strcat(tarCmd, "/a1.tar\" \"");
+    strcat(tarCmd, sourcePath);
+//    strcat(tarCmd, "\" -- *");
+//    strcat(tarCmd, fileExt);
+    strcat(tarCmd, "\"");
+
+    for (int i = 0; i < fileCount; ++i) {
+        strcat(tarCmd, " \"");
+        strcat(tarCmd, filePaths[i]);
+        strcat(tarCmd, "\"");
+    }
+
+    chdir(sourcePath);
+    int result = system(tarCmd);
+    printf("%s\n", tarCmd);
+    if (result == 0) {
+        printf("Tar file created successfully\n");
+    } else {
+        printf("Error creating tar file\n");
+    }
+
+    for (int i = 0; i < fileCount; i++)
+    {
+        free(filePaths[i]);
+    }
+    free(filePaths);
+
     return 0;
 }
 
@@ -117,6 +229,7 @@ int searchFile(char *argv[])
 {
     char *rootDir = argv[1];
     fileName = argv[2];
+    printf("here\n");
     if (nftw(rootDir, nftwFunc, 20, FTW_PHYS) == -1) {
         printf("Search Unsuccessful 3\n");
     }
@@ -131,32 +244,47 @@ int moveOrCopyFile(char *argv[])
     return 0;
 }
 
+int printSuggestion()
+{
+    printf("Please follow the manual for further assistance: \n");
+    printf("1. For seaching a file:\n");
+    printf("./fileutil [root_dir] filename\n");
+    printf("2. For moving or copying a file:\n");
+    printf("./fileutil [root_dir] [storage_dir] [options] filename\n");
+    printf("3. For zipping specific types of files to a folder:\n");
+    printf("./fileutil [root_dir] [storage_dir] extension \n");
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-        printf("No argument passed.\n");
+    if (argc <= 2) {
+        printf("argc <= 2\n");
+        printSuggestion();
         return 0;
     }
 
     if (argc == 3)
     {
+        printf("argc <= 3\n");
+        printf("%s, %s, %s, %s\n", argv[0], argv[1], argv[2], argv[3]);
         searchFile(argv);
         return 0;
     }
 
     if (argc == 5)
     {
+        printf("argc <= 5\n");
         moveOrCopyFile(argv);
         return 0;
     }
 
     if (argc == 4)
     {
-        zipFile(argc, argv);
+        printf("argc <= 4\n");
+        zipFile(argv);
         return 0;
     }
-    printf("Please follow the manual for further assistance: \n");
-    printf("./fileutil [ root_dir] filename\n");
-
+    printSuggestion();
     return 0;
 }
