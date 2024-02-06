@@ -139,7 +139,7 @@ int nftwFuncFileAdd(const char *filePath, const struct stat *statPtr,
             filePaths[fileCount] = (char *)malloc(strlen(filePath) + 1);
             strcpy(filePaths[fileCount], filePath);
 
-            fileCount++;  // Update file count
+            fileCount++;
         }
     }
     return 0;
@@ -149,7 +149,6 @@ int searchFileByExtension(char * fileExtension)
 {
     fileExt = fileExtension;
 
-    // First pass to count the files
     if (nftw(sourcePath, nftwFuncCount, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
@@ -159,27 +158,11 @@ int searchFileByExtension(char * fileExtension)
 
     filePaths = (char **)malloc(fileCount * sizeof(char *));
 
-    // Second pass to add file paths to the array
-    fileCount = 0;  // Reset file count
+    fileCount = 0;
     if (nftw(sourcePath, nftwFuncFileAdd, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
     }
-
-//    // Print the file paths
-//    printf("File Paths:\n");
-//    for (int i = 0; i < fileCount; i++)
-//    {
-//        printf("%s\n", filePaths[i]);
-//    }
-
-//    // Don't forget to free the allocated memory
-//    for (int i = 0; i < fileCount; i++)
-//    {
-//        free(filePaths[i]);
-//    }
-//    free(filePaths);
-
     return 0;
 }
 
@@ -188,17 +171,12 @@ int zipFile(char *argv[])
     fileExt = argv[3];
     sourcePath = argv[1];
     destinationPath = argv[2];
-
     searchFileByExtension(fileExt);
-
     char tarCmd[512];
     strcpy(tarCmd, "tar -cf \"");
     strcat(tarCmd, destinationPath);
-//    strcat(tarCmd, "/a1.tar\" -C \"");
     strcat(tarCmd, "/a1.tar\" \"");
     strcat(tarCmd, sourcePath);
-//    strcat(tarCmd, "\" -- *");
-//    strcat(tarCmd, fileExt);
     strcat(tarCmd, "\"");
 
     for (int i = 0; i < fileCount; ++i) {
@@ -221,7 +199,6 @@ int zipFile(char *argv[])
         free(filePaths[i]);
     }
     free(filePaths);
-
     return 0;
 }
 
@@ -256,6 +233,17 @@ int printSuggestion()
     return 0;
 }
 
+int emptyVars()
+{
+    if (sourcePath != NULL) {
+        free(sourcePath);
+    }
+    if (destinationPath != NULL) {
+        free(destinationPath);
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc <= 2) {
@@ -269,6 +257,7 @@ int main(int argc, char *argv[])
         printf("argc <= 3\n");
         printf("%s, %s, %s, %s\n", argv[0], argv[1], argv[2], argv[3]);
         searchFile(argv);
+//        emptyVars();
         return 0;
     }
 
@@ -276,6 +265,7 @@ int main(int argc, char *argv[])
     {
         printf("argc <= 5\n");
         moveOrCopyFile(argv);
+//        emptyVars();
         return 0;
     }
 
@@ -283,6 +273,7 @@ int main(int argc, char *argv[])
     {
         printf("argc <= 4\n");
         zipFile(argv);
+//        emptyVars();
         return 0;
     }
     printSuggestion();
