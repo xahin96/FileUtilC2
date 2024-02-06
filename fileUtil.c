@@ -224,12 +224,23 @@ int moveOrCopyFile(char *argv[])
 int printSuggestion()
 {
     printf("Please follow the manual for further assistance: \n");
-    printf("1. For seaching a file:\n");
+    printf("[1] For seaching a file:\n");
     printf("./fileutil [root_dir] filename\n");
-    printf("2. For moving or copying a file:\n");
+    printf("[2] For moving or copying a file:\n");
     printf("./fileutil [root_dir] [storage_dir] [options] filename\n");
-    printf("3. For zipping specific types of files to a folder:\n");
-    printf("./fileutil [root_dir] [storage_dir] extension \n");
+    printf("[3] For zipping specific types of files to a folder:\n");
+    printf("./fileutil [root_dir] [storage_dir] extension \n\n");
+    return 0;
+}
+
+int printWelcome()
+{
+    printf(" _______  __   __       _______  __    __  .___________. __   __      \n");
+    printf("|   ____||  | |  |     |   ____||  |  |  | |           ||  | |  |     \n");
+    printf("|  |__   |  | |  |     |  |__   |  |  |  | `---|  |----`|  | |  |     \n");
+    printf("|   __|  |  | |  |     |   __|  |  |  |  |     |  |     |  | |  |     \n");
+    printf("|  |     |  | |  `----.|  |____ |  `--'  |     |  |     |  | |  `----.\n");
+    printf("|__|     |__| |_______||_______| \\______/      |__|     |__| |_______|\n");
     return 0;
 }
 
@@ -246,8 +257,9 @@ int emptyVars()
 
 int main(int argc, char *argv[])
 {
+    printWelcome();
+
     if (argc <= 2) {
-        printf("argc <= 2\n");
         printSuggestion();
         return 0;
     }
