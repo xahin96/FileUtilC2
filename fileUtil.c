@@ -11,6 +11,7 @@ char * fileName;
 char * sourcePath;
 char * destinationPath;
 int fileCount = 0;
+int fileFound = 0;
 char **filePaths;
 
 int nftwCopySource(const char *filePath, const struct stat *statPtr,
@@ -102,6 +103,7 @@ int nftwFunc(const char *filePath, const struct stat *statPtr,
 {
     if (strcmp(filePath + ftwBuffer->base, fileName) == 0)
     {
+        fileFound = 1;
         if (fileFlags == FTW_D)
             printf("Directory found at: %s\n", filePath);
         else if (fileFlags == FTW_F)
@@ -206,9 +208,13 @@ int searchFile(char *argv[])
 {
     char *rootDir = argv[1];
     fileName = argv[2];
-    printf("here\n");
-    if (nftw(rootDir, nftwFunc, 20, FTW_PHYS) == -1) {
-        printf("Search Unsuccessful 3\n");
+    if (nftw(rootDir, nftwFunc, 20, FTW_PHYS) == -1)
+    {
+        printf("Search Unsuccessful\n");
+    }
+    if (fileFound == 0)
+    {
+        printf("Search Unsuccessful\n");
     }
     return 0;
 }
@@ -257,7 +263,7 @@ int emptyVars()
 
 int main(int argc, char *argv[])
 {
-    printWelcome();
+//    printWelcome();
 
     if (argc <= 2) {
         printSuggestion();
@@ -267,7 +273,6 @@ int main(int argc, char *argv[])
     if (argc == 3)
     {
         printf("argc <= 3\n");
-        printf("%s, %s, %s, %s\n", argv[0], argv[1], argv[2], argv[3]);
         searchFile(argv);
 //        emptyVars();
         return 0;
