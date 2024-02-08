@@ -108,7 +108,6 @@ int nftwFunc(const char *filePath, const struct stat *statPtr,
             printf("Directory found at: %s\n", filePath);
         else if (fileFlags == FTW_F)
             printf("File found at: %s\n", filePath);
-        return 1;
     }
     return 0;
 }
