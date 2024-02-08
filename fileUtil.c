@@ -42,15 +42,15 @@ int copyFileUtil(char * sourceP, char * destinationP)
     char buffer[4096];
 
     sourceFd = open(sourceP, O_RDONLY);
-    destinationFd = open(destinationP, O_CREAT | O_WRONLY, 0700);
 
     while (1) {
         file = read(sourceFd, buffer, 4096);
         if (file == -1) {
-            printf("Error reading file or file doesn't exist.\n");
+            printf("Search Unsuccessful\n");
             exit(1);
         }
-        
+        destinationFd = open(destinationP, O_CREAT | O_WRONLY, 0700);
+
         // TODO: n=?
         n = file;
 
@@ -82,19 +82,24 @@ int copyFile(char *argv[], char * option)
     sourcePath = argv[1];
     destinationPath = argv[2];
     if (nftw(sourcePath, nftwCopySource, 20, FTW_PHYS) == -1) {
-        printf("Search Unsuccessful 1\n");
+        printf("Invalid root_dir\n");
     }
     if (nftw(destinationPath, nftwCopyDestination, 30, FTW_PHYS) == -1) {
-        printf("Search Unsuccessful 2\n");
+        printf("Search Successful : Invalid storage_dir\n");
     }
-    printf("Source: %s \nDestination: %s\nFilename: %s\n", sourcePath, destinationPath, fileName);
     strcat(destinationPath, "/");
     strcat(destinationPath, fileName);
-    printf("Destination: %s\n", destinationPath);
 
     copyFileUtil(sourcePath, destinationPath);
     if (opt == 1)
+    {
         remove(sourcePath);
+        printf("Search Successful\n");
+        printf("File moved to the storage_dir\n");
+        return 0;
+    }
+    printf("Search Successful\n");
+    printf("File copied to the storage_dir\n");
     return 0;
 }
 
@@ -215,8 +220,6 @@ int searchFile(char *argv[])
     if (fileFound == 0)
     {
         printf("Search Unsuccessful\n");
-        exit(0);
-
     }
     return 0;
 }
@@ -276,7 +279,6 @@ int main(int argc, char *argv[])
     {
         printf("argc <= 3\n");
         searchFile(argv);
-//        emptyVars();
         return 0;
     }
 
@@ -284,7 +286,6 @@ int main(int argc, char *argv[])
     {
         printf("argc <= 5\n");
         moveOrCopyFile(argv);
-//        emptyVars();
         return 0;
     }
 
@@ -292,7 +293,6 @@ int main(int argc, char *argv[])
     {
         printf("argc <= 4\n");
         zipFile(argv);
-//        emptyVars();
         return 0;
     }
     printSuggestion();
