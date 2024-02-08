@@ -210,10 +210,13 @@ int searchFile(char *argv[])
     if (nftw(rootDir, nftwFunc, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
+        exit(0);
     }
     if (fileFound == 0)
     {
         printf("Search Unsuccessful\n");
+        exit(0);
+
     }
     return 0;
 }
