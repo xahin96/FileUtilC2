@@ -149,6 +149,14 @@ int nftwFuncFileAdd(const char *filePath, const struct stat *statPtr,
     return 0;
 }
 
+int nftwDestinationCheckTar(char *destinationPath)
+{
+    if (nftw(destinationPath, nftwCopyDestination, 30, FTW_PHYS) == -1) {
+        return 1;
+    }
+    return 0;
+}
+
 int searchFileByExtension(char * fileExtension)
 {
     fileExt = fileExtension;
@@ -174,6 +182,16 @@ int zipFile(char *argv[])
     fileExt = argv[3];
     sourcePath = argv[1];
     destinationPath = argv[2];
+    if (nftwDestinationCheckTar(destinationPath) == 1)
+    {
+        char mkdirCmd[512];
+        sprintf(mkdirCmd, "mkdir \"%s\"", destinationPath);
+        int fileCreated = system(mkdirCmd);
+        if (fileCreated != 0) {
+            printf("Invalid storage_dir. storage_dir creation failed");
+            exit(0);
+        }
+    }
     searchFileByExtension(fileExt);
     char tarCmd[512];
     strcpy(tarCmd, "tar -cf \"");
