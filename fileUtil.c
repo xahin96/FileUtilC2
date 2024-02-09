@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 char * fileExt;
 char * fileName;
@@ -125,7 +126,6 @@ int nftwFuncCount(const char *filePath, const struct stat *statPtr,
         const char *fileExtPtr = strrchr(filePath, '.');
         if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
         {
-            printf("File with extension found at: %s\n", filePath);
             fileCount++;
         }
     }
@@ -140,8 +140,6 @@ int nftwFuncFileAdd(const char *filePath, const struct stat *statPtr,
         const char *fileExtPtr = strrchr(filePath, '.');
         if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
         {
-            printf("File with extension found at: %s\n", filePath);
-
             filePaths[fileCount] = (char *)malloc(strlen(filePath) + 1);
             strcpy(filePaths[fileCount], filePath);
 
@@ -157,10 +155,9 @@ int searchFileByExtension(char * fileExtension)
 
     if (nftw(sourcePath, nftwFuncCount, 20, FTW_PHYS) == -1)
     {
-        printf("Search Unsuccessful\n");
+        printf("Invalid root_dir\n");
+        exit(0);
     }
-
-    printf("Total files with extension %s found: %d\n", fileExt, fileCount);
 
     filePaths = (char **)malloc(fileCount * sizeof(char *));
 
@@ -185,17 +182,44 @@ int zipFile(char *argv[])
     strcat(tarCmd, sourcePath);
     strcat(tarCmd, "\"");
 
+    bool fileAdded[fileCount];
     for (int i = 0; i < fileCount; ++i) {
-        strcat(tarCmd, " \"");
-        strcat(tarCmd, filePaths[i]);
-        strcat(tarCmd, "\"");
+        fileAdded[i] = false;
+    }
+
+    char finalAddedFiles[fileCount][256];
+    int finalFileCount = 0;
+
+    for (int i = 0; i < fileCount; ++i) {
+        if (!fileAdded[i]) { // If file hasn't been added yet
+            strcat(tarCmd, " \"");
+            strcat(tarCmd, filePaths[i]);
+            strcat(tarCmd, "\"");
+
+            // Mark this filename as added
+            fileAdded[i] = true;
+
+            // Add this filename to the final added files list
+            strcpy(finalAddedFiles[finalFileCount++], filePaths[i]);
+
+            // Check and mark other files with the same name
+            const char *fileName = strrchr(filePaths[i], '/');
+            for (int j = i + 1; j < fileCount; ++j) {
+                if (strcmp(strrchr(filePaths[j], '/'), fileName) == 0) {
+                    fileAdded[j] = true;
+                }
+            }
+        }
     }
 
     chdir(sourcePath);
     int result = system(tarCmd);
-    printf("%s\n", tarCmd);
     if (result == 0) {
-        printf("Tar file created successfully\n");
+        for (int i = 0; i < finalFileCount; ++i) {
+            printf("%s\n", finalAddedFiles[i]);
+        }
+        if (fileCount == 0)
+            printf("No file found with provided extension\n");
     } else {
         printf("Error creating tar file\n");
     }
@@ -286,7 +310,6 @@ int main(int argc, char *argv[])
     }
     if (argc == 4)
     {
-        printf("argc <= 4\n");
         zipFile(argv);
         return 0;
     }
