@@ -110,9 +110,9 @@ int nftwFunc(const char *filePath, const struct stat *statPtr,
     {
         fileFound = 1;
         if (fileFlags == FTW_D)
-            printf("Directory found at: %s\n", filePath);
+            printf("%s\n", filePath);
         else if (fileFlags == FTW_F)
-            printf("File found at: %s\n", filePath);
+            printf("%s\n", filePath);
     }
     return 0;
 }
@@ -181,7 +181,7 @@ int zipFile(char *argv[])
     char tarCmd[512];
     strcpy(tarCmd, "tar -cf \"");
     strcat(tarCmd, destinationPath);
-    strcat(tarCmd, "/a1.tar\" \"");
+    strcat(tarCmd, "/a1.tar\" --no-recursion \"");
     strcat(tarCmd, sourcePath);
     strcat(tarCmd, "\"");
 
@@ -246,12 +246,12 @@ int printSuggestion()
 
 int printWelcome()
 {
-    printf(" _______  __   __       _______  __    __  .___________. __   __      \n");
-    printf("|   ____||  | |  |     |   ____||  |  |  | |           ||  | |  |     \n");
-    printf("|  |__   |  | |  |     |  |__   |  |  |  | `---|  |----`|  | |  |     \n");
-    printf("|   __|  |  | |  |     |   __|  |  |  |  |     |  |     |  | |  |     \n");
-    printf("|  |     |  | |  `----.|  |____ |  `--'  |     |  |     |  | |  `----.\n");
-    printf("|__|     |__| |_______||_______| \\______/      |__|     |__| |_______|\n");
+    printf("         _______  __   __       _______  __    __  .___________. __   __      \n");
+    printf("        |   ____||  | |  |     |   ____||  |  |  | |           ||  | |  |     \n");
+    printf("        |  |__   |  | |  |     |  |__   |  |  |  | `---|  |----`|  | |  |     \n");
+    printf("        |   __|  |  | |  |     |   __|  |  |  |  |     |  |     |  | |  |     \n");
+    printf("        |  |     |  | |  `----.|  |____ |  `--'  |     |  |     |  | |  `----.\n");
+    printf("        |__|     |__| |_______||_______| \\______/      |__|     |__| |_______|\n");
     return 0;
 }
 
@@ -274,21 +274,16 @@ int main(int argc, char *argv[])
         printSuggestion();
         return 0;
     }
-
     if (argc == 3)
     {
-        printf("argc <= 3\n");
         searchFile(argv);
         return 0;
     }
-
     if (argc == 5)
     {
-        printf("argc <= 5\n");
         moveOrCopyFile(argv);
         return 0;
     }
-
     if (argc == 4)
     {
         printf("argc <= 4\n");
