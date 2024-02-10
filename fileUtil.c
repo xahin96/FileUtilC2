@@ -291,32 +291,8 @@ int printSuggestion()
     return 0;
 }
 
-int printWelcome()
-{
-    printf("         _______  __   __       _______  __    __  .___________. __   __      \n");
-    printf("        |   ____||  | |  |     |   ____||  |  |  | |           ||  | |  |     \n");
-    printf("        |  |__   |  | |  |     |  |__   |  |  |  | `---|  |----`|  | |  |     \n");
-    printf("        |   __|  |  | |  |     |   __|  |  |  |  |     |  |     |  | |  |     \n");
-    printf("        |  |     |  | |  `----.|  |____ |  `--'  |     |  |     |  | |  `----.\n");
-    printf("        |__|     |__| |_______||_______| \\______/      |__|     |__| |_______|\n");
-    return 0;
-}
-
-int emptyVars()
-{
-    if (sourcePath != NULL) {
-        free(sourcePath);
-    }
-    if (destinationPath != NULL) {
-        free(destinationPath);
-    }
-    return 0;
-}
-
 int main(int argc, char *argv[])
 {
-//    printWelcome();
-
     if (argc <= 2) {
         printSuggestion();
         return 0;
