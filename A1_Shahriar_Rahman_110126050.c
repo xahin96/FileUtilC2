@@ -7,12 +7,25 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+// source file path
 char * toFilePath;
+
+// destination file path
 char * fromFilePath;
+
+// counting total file with provided extension for tar file
 int totalFileNumb = 0;
+
+// initial tar file list with duplicates
 char **tarringFileList;
+
+// user provided file name holder
 char * providedFileName;
+
+// user provided file extension holder
 char * providedFileExten;
+
+// for printing error depending on whether a file is found or not
 int fileFoundSuccessfully = 0;
 
 // for resolving and setting the 'fromFilePath' location
