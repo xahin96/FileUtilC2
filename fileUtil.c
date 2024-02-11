@@ -193,7 +193,7 @@ int nftwDestinationCheckTar(char *destinationLocation)
 // search file by extension method
 int searchFileByExtension(char * providedFileExtens)
 {
-    // setting the extension glibally for future use
+    // setting the extension globally for future use
     providedFileExten = providedFileExtens;
 
     // counting the total number of files with the extension
@@ -230,7 +230,6 @@ int createTarToLocation(char *passedParamList[])
         char mkdirCmd[512];
         // if folder doesn't exist then crate the folders
         sprintf(mkdirCmd, "mkdir -p \"%s\" 2>/dev/null", toFilePath);
-        printf("%s\n", mkdirCmd);
         int fileCreated = system(mkdirCmd);
         if (fileCreated != 0) {
             printf("Invalid storage_dir. storage_dir creation failed\n");
@@ -255,7 +254,7 @@ int createTarToLocation(char *passedParamList[])
         fileAdded[i] = false;
     }
 
-    // to hold the unique filed added to TAR command
+    // to hold the unique file added to TAR command
     char finalAddedFiles[totalFileNumb][256];
     int finalFileCount = 0;
 
