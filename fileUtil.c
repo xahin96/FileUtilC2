@@ -7,31 +7,31 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-char * fileExt;
-char * fileName;
-char * sourcePath;
-char * destinationPath;
-int fileCount = 0;
-int fileFound = 0;
-char **filePaths;
+char * providedFileExten;
+char * providedFileName;
+char * fromFilePath;
+char * toFilePath;
+int totalFileNumb = 0;
+int fileFoundSuccessfully = 0;
+char **tarringFileList;
 
-int nftwCopySource(const char *filePath, const struct stat *statPtr,
-             int fileFlags, struct FTW *ftwBuffer)
+int nftwCopySource(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+             int fileFlags, struct FTW *nftwStructBfr)
 {
-    if (strcmp(filePath + ftwBuffer->base, fileName) == 0)
+    if (strcmp(nftwResolvedFileLoc + nftwStructBfr->base, providedFileName) == 0)
     {
-        sourcePath = strdup(filePath);
+        fromFilePath = strdup(nftwResolvedFileLoc);
         return 1;
     }
     return 0;
 }
 
-int nftwCopyDestination(const char *filePath, const struct stat *statPtr,
-             int fileFlags, struct FTW *ftwBuffer)
+int nftwCopyDestination(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+             int fileFlags, struct FTW *nftwStructBfr)
 {
     if (fileFlags == FTW_D)
     {
-        destinationPath = strdup(filePath);
+        toFilePath = strdup(nftwResolvedFileLoc);
         return 1;
     }
     return 0;
@@ -69,7 +69,7 @@ int copyFileUtil(char * sourceP, char * destinationP)
     return 0;
 }
 
-int copyFile(char *argv[], char * option)
+int copyFile(char *passedParamList[], char * option)
 {
     int opt = 0;
     if (strcmp(option, "-cp") == 0)
@@ -80,21 +80,21 @@ int copyFile(char *argv[], char * option)
     {
         printf("Accepted options are: -cp (copy file) and -mv (move file)");
     }
-    sourcePath = argv[1];
-    destinationPath = argv[2];
-    if (nftw(sourcePath, nftwCopySource, 20, FTW_PHYS) == -1) {
+    fromFilePath = passedParamList[1];
+    toFilePath = passedParamList[2];
+    if (nftw(fromFilePath, nftwCopySource, 20, FTW_PHYS) == -1) {
         printf("Invalid root_dir\n");
     }
-    if (nftw(destinationPath, nftwCopyDestination, 30, FTW_PHYS) == -1) {
+    if (nftw(toFilePath, nftwCopyDestination, 30, FTW_PHYS) == -1) {
         printf("Search Successful : Invalid storage_dir\n");
     }
-    strcat(destinationPath, "/");
-    strcat(destinationPath, fileName);
+    strcat(toFilePath, "/");
+    strcat(toFilePath, providedFileName);
 
-    copyFileUtil(sourcePath, destinationPath);
+    copyFileUtil(fromFilePath, toFilePath);
     if (opt == 1)
     {
-        remove(sourcePath);
+        remove(fromFilePath);
         printf("Search Successful\n");
         printf("File moved to the storage_dir\n");
         return 0;
@@ -104,46 +104,46 @@ int copyFile(char *argv[], char * option)
     return 0;
 }
 
-int nftwFunc(const char *filePath, const struct stat *statPtr,
-             int fileFlags, struct FTW *ftwBuffer)
+int mainNFTW(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+             int fileFlags, struct FTW *nftwStructBfr)
 {
-    if (strcmp(filePath + ftwBuffer->base, fileName) == 0)
+    if (strcmp(nftwResolvedFileLoc + nftwStructBfr->base, providedFileName) == 0)
     {
-        fileFound = 1;
+        fileFoundSuccessfully = 1;
         if (fileFlags == FTW_D)
-            printf("%s\n", filePath);
+            printf("%s\n", nftwResolvedFileLoc);
         else if (fileFlags == FTW_F)
-            printf("%s\n", filePath);
+            printf("%s\n", nftwResolvedFileLoc);
     }
     return 0;
 }
 
-int nftwFuncCount(const char *filePath, const struct stat *statPtr,
-             int fileFlags, struct FTW *ftwBuffer)
+int nftwFuncCount(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+             int fileFlags, struct FTW *nftwStructBfr)
 {
     if (fileFlags == FTW_F)
     {
-        const char *fileExtPtr = strrchr(filePath, '.');
-        if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
+        const char *fileExtPtr = strrchr(nftwResolvedFileLoc, '.');
+        if (fileExtPtr != NULL && strcmp(fileExtPtr, providedFileExten) == 0)
         {
-            fileCount++;
+            totalFileNumb++;
         }
     }
     return 0;
 }
 
-int nftwFuncFileAdd(const char *filePath, const struct stat *statPtr,
-                    int fileFlags, struct FTW *ftwBuffer)
+int nftwFuncFileAdd(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+                    int fileFlags, struct FTW *nftwStructBfr)
 {
     if (fileFlags == FTW_F)
     {
-        const char *fileExtPtr = strrchr(filePath, '.');
-        if (fileExtPtr != NULL && strcmp(fileExtPtr, fileExt) == 0)
+        const char *fileExtPtr = strrchr(nftwResolvedFileLoc, '.');
+        if (fileExtPtr != NULL && strcmp(fileExtPtr, providedFileExten) == 0)
         {
-            filePaths[fileCount] = (char *)malloc(strlen(filePath) + 1);
-            strcpy(filePaths[fileCount], filePath);
+            tarringFileList[totalFileNumb] = (char *)malloc(strlen(nftwResolvedFileLoc) + 1);
+            strcpy(tarringFileList[totalFileNumb], nftwResolvedFileLoc);
 
-            fileCount++;
+            totalFileNumb++;
         }
     }
     return 0;
@@ -157,35 +157,35 @@ int nftwDestinationCheckTar(char *destinationLocation)
     return 0;
 }
 
-int searchFileByExtension(char * fileExtension)
+int searchFileByExtension(char * providedFileExtens)
 {
-    fileExt = fileExtension;
+    providedFileExten = providedFileExtens;
 
-    if (nftw(sourcePath, nftwFuncCount, 20, FTW_PHYS) == -1)
+    if (nftw(fromFilePath, nftwFuncCount, 20, FTW_PHYS) == -1)
     {
         printf("Invalid root_dir\n");
         exit(0);
     }
 
-    filePaths = (char **)malloc(fileCount * sizeof(char *));
+    tarringFileList = (char **)malloc(totalFileNumb * sizeof(char *));
 
-    fileCount = 0;
-    if (nftw(sourcePath, nftwFuncFileAdd, 20, FTW_PHYS) == -1)
+    totalFileNumb = 0;
+    if (nftw(fromFilePath, nftwFuncFileAdd, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
     }
     return 0;
 }
 
-int zipFile(char *argv[])
+int createTarToLocation(char *passedParamList[])
 {
-    fileExt = argv[3];
-    sourcePath = argv[1];
-    destinationPath = argv[2];
-    if (nftwDestinationCheckTar(destinationPath) == 1)
+    providedFileExten = passedParamList[3];
+    fromFilePath = passedParamList[1];
+    toFilePath = passedParamList[2];
+    if (nftwDestinationCheckTar(toFilePath) == 1)
     {
         char mkdirCmd[512];
-        sprintf(mkdirCmd, "mkdir \"%s\" 2>/dev/null", destinationPath);
+        sprintf(mkdirCmd, "mkdir \"%s\" 2>/dev/null", toFilePath);
         int fileCreated = system(mkdirCmd);
         if (fileCreated != 0) {
             printf("Invalid storage_dir. storage_dir creation failed\n");
@@ -197,89 +197,89 @@ int zipFile(char *argv[])
         printf("Invalid storage_dir. storage_dir creation failed\n");
         exit(0);
     }
-    searchFileByExtension(fileExt);
+    searchFileByExtension(providedFileExten);
     char tarCmd[512];
     strcpy(tarCmd, "tar -cf \"");
-    strcat(tarCmd, destinationPath);
+    strcat(tarCmd, toFilePath);
     strcat(tarCmd, "/a1.tar\" --no-recursion \"");
-    strcat(tarCmd, sourcePath);
+    strcat(tarCmd, fromFilePath);
     strcat(tarCmd, "\"");
 
-    bool fileAdded[fileCount];
-    for (int i = 0; i < fileCount; ++i) {
+    bool fileAdded[totalFileNumb];
+    for (int i = 0; i < totalFileNumb; ++i) {
         fileAdded[i] = false;
     }
 
-    char finalAddedFiles[fileCount][256];
+    char finalAddedFiles[totalFileNumb][256];
     int finalFileCount = 0;
 
-    for (int i = 0; i < fileCount; ++i) {
+    for (int i = 0; i < totalFileNumb; ++i) {
         if (!fileAdded[i]) { // If file hasn't been added yet
             strcat(tarCmd, " \"");
-            strcat(tarCmd, filePaths[i]);
+            strcat(tarCmd, tarringFileList[i]);
             strcat(tarCmd, "\"");
 
             // Mark this filename as added
             fileAdded[i] = true;
 
             // Add this filename to the final added files list
-            strcpy(finalAddedFiles[finalFileCount++], filePaths[i]);
+            strcpy(finalAddedFiles[finalFileCount++], tarringFileList[i]);
 
             // Check and mark other files with the same name
-            const char *fileName = strrchr(filePaths[i], '/');
-            for (int j = i + 1; j < fileCount; ++j) {
-                if (strcmp(strrchr(filePaths[j], '/'), fileName) == 0) {
+            const char *onlyFileName = strrchr(tarringFileList[i], '/');
+            for (int j = i + 1; j < totalFileNumb; ++j) {
+                if (strcmp(strrchr(tarringFileList[j], '/'), onlyFileName) == 0) {
                     fileAdded[j] = true;
                 }
             }
         }
     }
 
-    chdir(sourcePath);
+    chdir(fromFilePath);
     int result = system(tarCmd);
     if (result == 0) {
         for (int i = 0; i < finalFileCount; ++i) {
             printf("%s\n", finalAddedFiles[i]);
         }
-        if (fileCount == 0)
+        if (totalFileNumb == 0)
             printf("No file found with provided extension\n");
     } else {
         printf("Error creating tar file\n");
     }
 
-    for (int i = 0; i < fileCount; i++)
+    for (int i = 0; i < totalFileNumb; i++)
     {
-        free(filePaths[i]);
+        free(tarringFileList[i]);
     }
-    free(filePaths);
+    free(tarringFileList);
     return 0;
 }
 
-int searchFile(char *argv[])
+int fileFinderInLoc(char *passedParamList[])
 {
-    char *rootDir = argv[1];
-    fileName = argv[2];
-    if (nftw(rootDir, nftwFunc, 20, FTW_PHYS) == -1)
+    char *srcFolderLoc = passedParamList[1];
+    providedFileName = passedParamList[2];
+    if (nftw(srcFolderLoc, mainNFTW, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
         exit(0);
     }
-    if (fileFound == 0)
+    if (fileFoundSuccessfully == 0)
     {
         printf("Search Unsuccessful\n");
     }
     return 0;
 }
 
-int moveOrCopyFile(char *argv[])
+int moveOrCopyFileToLoc(char *passedParamList[])
 {
-    char * moveOrCopy = argv[3];
-    fileName = argv[4];
-    copyFile(argv, moveOrCopy);
+    char * moveOrCopy = passedParamList[3];
+    providedFileName = passedParamList[4];
+    copyFile(passedParamList, moveOrCopy);
     return 0;
 }
 
-int printSuggestion()
+int printSuggestionToUser()
 {
     printf("Please follow the manual for further assistance: \n");
     printf("[1] For seaching a file:\n");
@@ -291,27 +291,27 @@ int printSuggestion()
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int totalParamsPassed, char *passedParamList[])
 {
-    if (argc <= 2) {
-        printSuggestion();
-        return 0;
-    }
-    if (argc == 3)
+    // for file searching functionalities
+    if (totalParamsPassed == 3)
     {
-        searchFile(argv);
+        fileFinderInLoc(passedParamList);
         return 0;
     }
-    if (argc == 5)
+    // for moving/copying files
+    if (totalParamsPassed == 5)
     {
-        moveOrCopyFile(argv);
+        moveOrCopyFileToLoc(passedParamList);
         return 0;
     }
-    if (argc == 4)
+    // for zipping files
+    if (totalParamsPassed == 4)
     {
-        zipFile(argv);
+        createTarToLocation(passedParamList);
         return 0;
     }
-    printSuggestion();
+    // if nothing matches then printing suggestions to user
+    printSuggestionToUser();
     return 0;
 }
