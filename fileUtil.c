@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-char * providedFileExten;
-char * providedFileName;
-char * fromFilePath;
 char * toFilePath;
+char * fromFilePath;
 int totalFileNumb = 0;
-int fileFoundSuccessfully = 0;
 char **tarringFileList;
+char * providedFileName;
+char * providedFileExten;
+int fileFoundSuccessfully = 0;
 
 // for resolving and setting the 'fromFilePath' location
 int nftwCopySource(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
@@ -141,11 +141,15 @@ int mainNFTW(const char *nftwResolvedFileLoc,
     return 0;
 }
 
+// method used for counting the total number of files found with
+// specific extension
 int nftwFuncCount(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
              int fileFlags, struct FTW *nftwStructBfr)
 {
     if (fileFlags == FTW_F)
     {
+        // if the provided extension matches the traversed file extension
+        // then the counter is incremented
         const char *fileExtPtr = strrchr(nftwResolvedFileLoc, '.');
         if (fileExtPtr != NULL && strcmp(fileExtPtr, providedFileExten) == 0)
         {
@@ -155,15 +159,21 @@ int nftwFuncCount(const char *nftwResolvedFileLoc, const struct stat *nftwStruct
     return 0;
 }
 
+// Method for storing all the file paths with desired extension
 int nftwFuncFileAdd(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
                     int fileFlags, struct FTW *nftwStructBfr)
 {
     if (fileFlags == FTW_F)
     {
+        // getting the traversed file extension
         const char *fileExtPtr = strrchr(nftwResolvedFileLoc, '.');
+        // if traversed file extension matches the desired file extension
+        // then storing it
         if (fileExtPtr != NULL && strcmp(fileExtPtr, providedFileExten) == 0)
         {
+            // dynamically allocating a space size for each file path
             tarringFileList[totalFileNumb] = (char *)malloc(strlen(nftwResolvedFileLoc) + 1);
+            // then storing the file path in specific index
             strcpy(tarringFileList[totalFileNumb], nftwResolvedFileLoc);
 
             totalFileNumb++;
@@ -180,19 +190,26 @@ int nftwDestinationCheckTar(char *destinationLocation)
     return 0;
 }
 
+// search file by extension method
 int searchFileByExtension(char * providedFileExtens)
 {
+    // setting the extension glibally for future use
     providedFileExten = providedFileExtens;
 
+    // counting the total number of files with the extension
     if (nftw(fromFilePath, nftwFuncCount, 20, FTW_PHYS) == -1)
     {
         printf("Invalid root_dir\n");
         exit(0);
     }
 
+    // array of array to hold all the files found with the same extension
+    // dynamic size allocated by using the file count
     tarringFileList = (char **)malloc(totalFileNumb * sizeof(char *));
 
+    // resetting the total number for future use
     totalFileNumb = 0;
+    // using NFTW for generating array of files with desired extensions
     if (nftw(fromFilePath, nftwFuncFileAdd, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
@@ -200,47 +217,55 @@ int searchFileByExtension(char * providedFileExtens)
     return 0;
 }
 
+// TAR file creation main method
 int createTarToLocation(char *passedParamList[])
 {
     providedFileExten = passedParamList[3];
     fromFilePath = passedParamList[1];
     toFilePath = passedParamList[2];
+
+    // checking if the destination location exists
     if (nftwDestinationCheckTar(toFilePath) == 1)
     {
         char mkdirCmd[512];
-        sprintf(mkdirCmd, "mkdir \"%s\" 2>/dev/null", toFilePath);
+        // if folder doesn't exist then crate the folders
+        sprintf(mkdirCmd, "mkdir -p \"%s\" 2>/dev/null", toFilePath);
+        printf("%s\n", mkdirCmd);
         int fileCreated = system(mkdirCmd);
         if (fileCreated != 0) {
             printf("Invalid storage_dir. storage_dir creation failed\n");
             exit(0);
         }
     }
-    else
-    {
-        printf("Invalid storage_dir. storage_dir creation failed\n");
-        exit(0);
-    }
-    searchFileByExtension(providedFileExten);
-    char tarCmd[512];
-    strcpy(tarCmd, "tar -cf \"");
-    strcat(tarCmd, toFilePath);
-    strcat(tarCmd, "/a1.tar\" --no-recursion \"");
-    strcat(tarCmd, fromFilePath);
-    strcat(tarCmd, "\"");
 
+    // search for files by provided extensions and generate
+    // 'tarringFileList' to store them
+    searchFileByExtension(providedFileExten);
+    char createTarToDestCMD[512];
+    // creating the tar command
+    strcpy(createTarToDestCMD, "tar -cf \"");
+    strcat(createTarToDestCMD, toFilePath);
+    strcat(createTarToDestCMD, "/a1.tar\" --no-recursion \"");
+    strcat(createTarToDestCMD, fromFilePath);
+    strcat(createTarToDestCMD, "\"");
+
+    // array for keeping a track for duplicate file names
     bool fileAdded[totalFileNumb];
     for (int i = 0; i < totalFileNumb; ++i) {
         fileAdded[i] = false;
     }
 
+    // to hold the unique filed added to TAR command
     char finalAddedFiles[totalFileNumb][256];
     int finalFileCount = 0;
 
     for (int i = 0; i < totalFileNumb; ++i) {
-        if (!fileAdded[i]) { // If file hasn't been added yet
-            strcat(tarCmd, " \"");
-            strcat(tarCmd, tarringFileList[i]);
-            strcat(tarCmd, "\"");
+        // If file hasn't been added to the list
+        if (!fileAdded[i])
+        {
+            strcat(createTarToDestCMD, " \"");
+            strcat(createTarToDestCMD, tarringFileList[i]);
+            strcat(createTarToDestCMD, "\"");
 
             // Mark this filename as added
             fileAdded[i] = true;
@@ -248,8 +273,10 @@ int createTarToLocation(char *passedParamList[])
             // Add this filename to the final added files list
             strcpy(finalAddedFiles[finalFileCount++], tarringFileList[i]);
 
-            // Check and mark other files with the same name
+            // storing the file name only to compare
             const char *onlyFileName = strrchr(tarringFileList[i], '/');
+            // looping over the whole 'fileAdded' list and making it true for
+            // any path that has the same file name
             for (int j = i + 1; j < totalFileNumb; ++j) {
                 if (strcmp(strrchr(tarringFileList[j], '/'), onlyFileName) == 0) {
                     fileAdded[j] = true;
@@ -258,10 +285,14 @@ int createTarToLocation(char *passedParamList[])
         }
     }
 
+    // changing directory to source file path so that the paths used
+    // for TAR is relative to source
     chdir(fromFilePath);
-    int result = system(tarCmd);
+    // running the command
+    int result = system(createTarToDestCMD);
     if (result == 0) {
         for (int i = 0; i < finalFileCount; ++i) {
+            // printing the successfully added files
             printf("%s\n", finalAddedFiles[i]);
         }
         if (totalFileNumb == 0)
