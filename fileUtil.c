@@ -15,6 +15,7 @@ int totalFileNumb = 0;
 int fileFoundSuccessfully = 0;
 char **tarringFileList;
 
+// for resolving and setting the 'fromFilePath' location
 int nftwCopySource(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
              int fileFlags, struct FTW *nftwStructBfr)
 {
@@ -26,6 +27,7 @@ int nftwCopySource(const char *nftwResolvedFileLoc, const struct stat *nftwStruc
     return 0;
 }
 
+// for resolving and setting the 'toFilePath' location
 int nftwCopyDestination(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
              int fileFlags, struct FTW *nftwStructBfr)
 {
@@ -37,39 +39,44 @@ int nftwCopyDestination(const char *nftwResolvedFileLoc, const struct stat *nftw
     return 0;
 }
 
+// Copy file utility method
 int copyFileUtil(char * sourceP, char * destinationP)
 {
-    int sourceFd, destinationFd, n, file;
-    char buffer[4096];
+    int readFileFDMV, destinationFd, cpMvFile;
+    char cpMvBuffer[4096];
 
-    sourceFd = open(sourceP, O_RDONLY);
+    // opening the file found in the location
+    readFileFDMV = open(sourceP, O_RDONLY);
 
     while (1) {
-        file = read(sourceFd, buffer, 4096);
-        if (file == -1) {
+        // reading the file in location
+        cpMvFile = read(readFileFDMV, cpMvBuffer, 4096);
+        if (cpMvFile == -1) {
             printf("Search Unsuccessful\n");
             exit(1);
         }
+
+        // opening the destination location
         destinationFd = open(destinationP, O_CREAT | O_WRONLY, 0700);
 
-        // TODO: n=?
-        n = file;
-
-        if (n == 0)
+        // stop if nothing was read
+        if (cpMvFile == 0)
             break;
 
-        file = write(destinationFd, buffer, n);
-        if (file == -1) {
-            printf("Error writing to file.\n");
+        // writing the file in the destination
+        cpMvFile = write(destinationFd, cpMvBuffer, cpMvFile);
+        if (cpMvFile == -1) {
+            printf("Error writing to cpMvFile.\n");
             exit(1);
         }
     }
-    close(sourceFd);
+    close(readFileFDMV);
     close(destinationFd);
     return 0;
 }
 
-int copyFile(char *passedParamList[], char * option)
+// Copy or move file main method
+int copyOrMoveFileToLoc(char *passedParamList[], char * option)
 {
     int opt = 0;
     if (strcmp(option, "-cp") == 0)
@@ -82,16 +89,23 @@ int copyFile(char *passedParamList[], char * option)
     }
     fromFilePath = passedParamList[1];
     toFilePath = passedParamList[2];
+
+    // calling NFTW for resolving the from and to location
     if (nftw(fromFilePath, nftwCopySource, 20, FTW_PHYS) == -1) {
         printf("Invalid root_dir\n");
+        exit(0);
     }
     if (nftw(toFilePath, nftwCopyDestination, 30, FTW_PHYS) == -1) {
         printf("Search Successful : Invalid storage_dir\n");
+        exit(0);
     }
+    // generating the full location of the file including name
     strcat(toFilePath, "/");
     strcat(toFilePath, providedFileName);
 
+    // initiating copy file functionality
     copyFileUtil(fromFilePath, toFilePath);
+    // run in case of move file
     if (opt == 1)
     {
         remove(fromFilePath);
@@ -104,12 +118,21 @@ int copyFile(char *passedParamList[], char * option)
     return 0;
 }
 
-int mainNFTW(const char *nftwResolvedFileLoc, const struct stat *nftwStructStatPointer,
+// NFTW method for the file search functionality
+int mainNFTW(const char *nftwResolvedFileLoc,
+             const struct stat *nftwStructStatPointer,
              int fileFlags, struct FTW *nftwStructBfr)
 {
+    // nftwResolvedFileLoc: the fully qualified path of the file
+    // nftwStructBfr->base: an integer location provided by NFTW
+    // nftwResolvedFileLoc + nftwStructBfr->base: the file name only with the extension
+    // checking if providedFileName matches the traversing file name
     if (strcmp(nftwResolvedFileLoc + nftwStructBfr->base, providedFileName) == 0)
     {
+        // setting fileFoundSuccessfully for future output printing
         fileFoundSuccessfully = 1;
+        // checking location type
+        // FTW_D is directory and FTW_F is file
         if (fileFlags == FTW_D)
             printf("%s\n", nftwResolvedFileLoc);
         else if (fileFlags == FTW_F)
@@ -259,11 +282,14 @@ int fileFinderInLoc(char *passedParamList[])
 {
     char *srcFolderLoc = passedParamList[1];
     providedFileName = passedParamList[2];
+    // calling nftw for checking the location, returns -1 if fails
     if (nftw(srcFolderLoc, mainNFTW, 20, FTW_PHYS) == -1)
     {
         printf("Search Unsuccessful\n");
         exit(0);
     }
+    // fileFoundSuccessfully is 1 if provided file name was found in
+    // the provided directory
     if (fileFoundSuccessfully == 0)
     {
         printf("Search Unsuccessful\n");
@@ -273,9 +299,9 @@ int fileFinderInLoc(char *passedParamList[])
 
 int moveOrCopyFileToLoc(char *passedParamList[])
 {
-    char * moveOrCopy = passedParamList[3];
+    char * moveOrCopyOption = passedParamList[3];
     providedFileName = passedParamList[4];
-    copyFile(passedParamList, moveOrCopy);
+    copyOrMoveFileToLoc(passedParamList, moveOrCopyOption);
     return 0;
 }
 
