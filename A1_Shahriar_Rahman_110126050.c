@@ -384,3 +384,35 @@ int main(int totalParamsPassed, char *passedParamList[])
     printSuggestionToUser();
     return 0;
 }
+
+/*
+ASP Assignment Commands
+
+
+        Search File
+1. Successful first search
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 p1.c
+2. Unsuccessful file name
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 b2.c
+3. Same file name
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6 a1.c
+
+
+        Copy/Move File
+1. Successful Cop
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/My\ Files/test/task\ 1\ copy\ 6/folder2 -cp b3.pdf
+2. Unsuccessful copy
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/My\ Files/test/task\ 1\ copy\ 6/folder2 -cp b5.pdf
+3. invalid root_dir
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1/folder5 ~/My\ Files/test/task\ 1\ copy\ 6/folder2 -cp b5.pdf
+4. Invalid storage_dir
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/My\ Files/test/task\ 1\ copy\ 6/folder9 -cp b4.pdf
+5. Successful move
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/My\ Files/test/task\ 1\ copy\ 6/folder2 -mv p1.c
+
+        TAR
+1. Successful in new created folder
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/My\ Files/test/task\ 1\ copy\ 6/folder2/folder2222 .c
+2. Successful in new recursive folder
+./fileutil ~/My\ Files/test/task\ 1\ copy\ 6/folder1 ~/M\ Files/test/task\ 1\ copy\ 6/folder2 .pdf
+ */
